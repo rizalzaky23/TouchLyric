@@ -63,10 +63,17 @@ extension SystemTouchBarManager: NSTouchBarDelegate {
         let label = NSTextField(labelWithString: "")
         label.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         label.alignment = .center
-        svc.state.$currentLineIndex.receive(on: DispatchQueue.main).sink { idx in
-            let txt = svc.state.lyrics[safe: idx]?.text ?? ""
-            label.stringValue = txt
-        }.store(in: &cancellables)
+        // Show initial lyric if available
+        label.stringValue = svc.state.lyrics.first?.text ?? ""
+        // Update when either the current index or the lyrics array changes
+        svc.state.$currentLineIndex
+            .combineLatest(svc.state.$lyrics)
+            .receive(on: DispatchQueue.main)
+            .sink { idx, lines in
+                let txt = lines.indices.contains(idx) ? lines[idx].text : lines.first?.text ?? ""
+                label.stringValue = txt
+            }
+            .store(in: &cancellables)
         item.view = label
         return item
     }
