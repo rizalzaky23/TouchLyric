@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1F04A8FE309A1C7C00A2DAD7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F04A8E1309A1C2C00A2DAD7 /* AppDelegate.swift */; };
+		1F04A900309A1C7C00A2DAD7 /* TrackAndLyricModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F04A8E4309A1C2C00A2DAD7 /* TrackAndLyricModels.swift */; };
+		1F04A901309A1C7C00A2DAD7 /* LRCParserAndCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F04A8E6309A1C2C00A2DAD7 /* LRCParserAndCacheService.swift */; };
+		1F04A902309A1C7C00A2DAD7 /* SpotifyBridgeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F04A8E7309A1C2C00A2DAD7 /* SpotifyBridgeService.swift */; };
+		1F04A903309A1C7C00A2DAD7 /* SystemTouchBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F04A8E9309A1C2C00A2DAD7 /* SystemTouchBarManager.swift */; };
+		1F04A904309A1C7C00A2DAD7 /* PopoverContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F04A8F4309A1C2C00A2DAD7 /* PopoverContentView.swift */; };
+		1F04A905309A1C7C00A2DAD7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F04A8F5309A1C2C00A2DAD7 /* SettingsView.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1F04A8C5309A197900A2DAD7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,11 +37,42 @@
 		1F04A8B7309A197700A2DAD7 /* TouchLyric.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TouchLyric.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1F04A8C4309A197900A2DAD7 /* TouchLyricTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TouchLyricTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1F04A8CE309A197900A2DAD7 /* TouchLyricUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TouchLyricUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F04A8E1309A1C2C00A2DAD7 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		1F04A8E2309A1C2C00A2DAD7 /* TouchLyricApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchLyricApp.swift; sourceTree = "<group>"; };
+		1F04A8E4309A1C2C00A2DAD7 /* TrackAndLyricModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackAndLyricModels.swift; sourceTree = "<group>"; };
+		1F04A8E6309A1C2C00A2DAD7 /* LRCParserAndCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCParserAndCacheService.swift; sourceTree = "<group>"; };
+		1F04A8E7309A1C2C00A2DAD7 /* SpotifyBridgeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyBridgeService.swift; sourceTree = "<group>"; };
+		1F04A8E9309A1C2C00A2DAD7 /* SystemTouchBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemTouchBarManager.swift; sourceTree = "<group>"; };
+		1F04A8EB309A1C2C00A2DAD7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1F04A8EC309A1C2C00A2DAD7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1F04A8ED309A1C2C00A2DAD7 /* TouchLyricApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchLyricApp.swift; sourceTree = "<group>"; };
+		1F04A8EF309A1C2C00A2DAD7 /* TouchLyricTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchLyricTests.swift; sourceTree = "<group>"; };
+		1F04A8F1309A1C2C00A2DAD7 /* TouchLyricUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchLyricUITests.swift; sourceTree = "<group>"; };
+		1F04A8F2309A1C2C00A2DAD7 /* TouchLyricUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchLyricUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		1F04A8F4309A1C2C00A2DAD7 /* PopoverContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverContentView.swift; sourceTree = "<group>"; };
+		1F04A8F5309A1C2C00A2DAD7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1F04A8F7309A1C2C00A2DAD7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1F04A8F8309A1C2C00A2DAD7 /* TouchLyric.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TouchLyric.entitlements; sourceTree = "<group>"; };
+		1F04A8F9309A1C2C00A2DAD7 /* TouchLyric.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = TouchLyric.xcodeproj; sourceTree = "<group>"; };
+		1F04A8FA309A1C2C00A2DAD7 /* TouchLyric-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TouchLyric-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1F04A906309A1C9D00A2DAD7 /* Exceptions for "TouchLyric" folder in "TouchLyric" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ContentView.swift,
+			);
+			target = 1F04A8B6309A197600A2DAD7 /* TouchLyric */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1F04A8B9309A197700A2DAD7 /* TouchLyric */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				1F04A906309A1C9D00A2DAD7 /* Exceptions for "TouchLyric" folder in "TouchLyric" target */,
+			);
 			path = TouchLyric;
 			sourceTree = "<group>";
 		};
@@ -76,6 +117,7 @@
 			isa = PBXGroup;
 			children = (
 				1F04A8B9309A197700A2DAD7 /* TouchLyric */,
+				1F04A8FB309A1C2C00A2DAD7 /* TouchLyric */,
 				1F04A8C7309A197900A2DAD7 /* TouchLyricTests */,
 				1F04A8D1309A197900A2DAD7 /* TouchLyricUITests */,
 				1F04A8B8309A197700A2DAD7 /* Products */,
@@ -89,6 +131,100 @@
 				1F04A8C4309A197900A2DAD7 /* TouchLyricTests.xctest */,
 				1F04A8CE309A197900A2DAD7 /* TouchLyricUITests.xctest */,
 			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1F04A8E3309A1C2C00A2DAD7 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8E1309A1C2C00A2DAD7 /* AppDelegate.swift */,
+				1F04A8E2309A1C2C00A2DAD7 /* TouchLyricApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		1F04A8E5309A1C2C00A2DAD7 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8E4309A1C2C00A2DAD7 /* TrackAndLyricModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		1F04A8E8309A1C2C00A2DAD7 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8E6309A1C2C00A2DAD7 /* LRCParserAndCacheService.swift */,
+				1F04A8E7309A1C2C00A2DAD7 /* SpotifyBridgeService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		1F04A8EA309A1C2C00A2DAD7 /* TouchBar */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8E9309A1C2C00A2DAD7 /* SystemTouchBarManager.swift */,
+			);
+			path = TouchBar;
+			sourceTree = "<group>";
+		};
+		1F04A8EE309A1C2C00A2DAD7 /* TouchLyric */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8EB309A1C2C00A2DAD7 /* Assets.xcassets */,
+				1F04A8EC309A1C2C00A2DAD7 /* ContentView.swift */,
+				1F04A8ED309A1C2C00A2DAD7 /* TouchLyricApp.swift */,
+			);
+			path = TouchLyric;
+			sourceTree = "<group>";
+		};
+		1F04A8F0309A1C2C00A2DAD7 /* TouchLyricTests */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8EF309A1C2C00A2DAD7 /* TouchLyricTests.swift */,
+			);
+			path = TouchLyricTests;
+			sourceTree = "<group>";
+		};
+		1F04A8F3309A1C2C00A2DAD7 /* TouchLyricUITests */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8F1309A1C2C00A2DAD7 /* TouchLyricUITests.swift */,
+				1F04A8F2309A1C2C00A2DAD7 /* TouchLyricUITestsLaunchTests.swift */,
+			);
+			path = TouchLyricUITests;
+			sourceTree = "<group>";
+		};
+		1F04A8F6309A1C2C00A2DAD7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8F4309A1C2C00A2DAD7 /* PopoverContentView.swift */,
+				1F04A8F5309A1C2C00A2DAD7 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		1F04A8FB309A1C2C00A2DAD7 /* TouchLyric */ = {
+			isa = PBXGroup;
+			children = (
+				1F04A8E3309A1C2C00A2DAD7 /* App */,
+				1F04A8E5309A1C2C00A2DAD7 /* Models */,
+				1F04A8E8309A1C2C00A2DAD7 /* Services */,
+				1F04A8EA309A1C2C00A2DAD7 /* TouchBar */,
+				1F04A8EE309A1C2C00A2DAD7 /* TouchLyric */,
+				1F04A8F0309A1C2C00A2DAD7 /* TouchLyricTests */,
+				1F04A8F3309A1C2C00A2DAD7 /* TouchLyricUITests */,
+				1F04A8F6309A1C2C00A2DAD7 /* Views */,
+				1F04A8F7309A1C2C00A2DAD7 /* Info.plist */,
+				1F04A8F8309A1C2C00A2DAD7 /* TouchLyric.entitlements */,
+				1F04A8F9309A1C2C00A2DAD7 /* TouchLyric.xcodeproj */,
+				1F04A8FA309A1C2C00A2DAD7 /* TouchLyric-Bridging-Header.h */,
+			);
+			name = TouchLyric;
+			sourceTree = "<group>";
+		};
+		1F04A8FC309A1C2C00A2DAD7 /* Products */ = {
+			isa = PBXGroup;
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -198,6 +334,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1F04A8B8309A197700A2DAD7 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 1F04A8FC309A1C2C00A2DAD7 /* Products */;
+					ProjectRef = 1F04A8F9309A1C2C00A2DAD7 /* TouchLyric.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				1F04A8B6309A197600A2DAD7 /* TouchLyric */,
@@ -236,6 +378,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1F04A8FE309A1C7C00A2DAD7 /* AppDelegate.swift in Sources */,
+				1F04A900309A1C7C00A2DAD7 /* TrackAndLyricModels.swift in Sources */,
+				1F04A901309A1C7C00A2DAD7 /* LRCParserAndCacheService.swift in Sources */,
+				1F04A902309A1C7C00A2DAD7 /* SpotifyBridgeService.swift in Sources */,
+				1F04A903309A1C7C00A2DAD7 /* SystemTouchBarManager.swift in Sources */,
+				1F04A904309A1C7C00A2DAD7 /* PopoverContentView.swift in Sources */,
+				1F04A905309A1C7C00A2DAD7 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
