@@ -1,0 +1,41 @@
+name: Release TouchLyric
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build TouchLyric Release
+        run: |
+          xcodebuild -project TouchLyric.xcodeproj \
+            -scheme TouchLyric \
+            -configuration Release \
+            -derivedDataPath ./build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package Application
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent ./build/Build/Products/Release/TouchLyric.app TouchLyric.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: TouchLyric.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
