@@ -81,17 +81,16 @@ extension SystemTouchBarManager: NSTouchBarDelegate {
         guard identifier.rawValue == "TouchLyric.activeLine",
               let svc = spotifyService else { return nil }
         let item = NSCustomTouchBarItem(identifier: identifier)
-        item.view = NSHostingView(rootView: TouchBarLyricView(spotifyService: svc))
+        item.view = NSHostingView(rootView: TouchBarLyricView(state: svc.state))
         return item
     }
 }
 
 // MARK: - Touch Bar SwiftUI View
 struct TouchBarLyricView: View {
-    @ObservedObject var spotifyService: SpotifyBridgeService
+    @ObservedObject var state: TouchLyricState
 
     private var currentText: String {
-        let state = spotifyService.state
         if let track = state.track {
             if !state.lyrics.isEmpty && state.lyrics.indices.contains(state.currentLineIndex) {
                 let line = state.lyrics[state.currentLineIndex].text
