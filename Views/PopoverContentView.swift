@@ -20,6 +20,13 @@ struct PopoverContentView: View {
                 touchBarMgr.presentSystemTouchBar()
             }
         }
+        .onChange(of: spotify.state.isTouchBarEnabled) { enabled in
+            if enabled {
+                touchBarMgr.presentSystemTouchBar()
+            } else {
+                touchBarMgr.dismissSystemTouchBar()
+            }
+        }
     }
 
     // MARK: Header

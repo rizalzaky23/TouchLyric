@@ -14,12 +14,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         touchBarManager = SystemTouchBarManager()
         touchBarManager.inject(spotifyService: spotifyService)
 
-        // Status item in menu bar
+        NSApp.setActivationPolicy(.regular)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "music.note.list", accessibilityDescription: "TouchLyric")
+            button.target = self
             button.action = #selector(togglePopover(_:))
         }
+
 
         // Popover
         let vc = NSHostingController(rootView: PopoverContentView()
@@ -32,16 +34,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Control‑strip button via private API
         touchBarManager.addControlStripButton()
-    }
 
-    @objc private func togglePopover(_ sender: Any?) {
-        if popover.isShown {
-            popover.performClose(sender)
-        } else if let button = statusItem.button {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+        // Auto-present Touch Bar on launch
+        if spotifyService.state.isTouchBarEnabled {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.touchBarManager.presentSystemTouchBar()
+            }
         }
     }
+
+        @objc private func togglePopover(_ sender: Any?) {
+            if popover.isShown {
+                popover.performClose(sender)
+            } else if let button = statusItem.button {
+                // Bring app to front (needed for LSUIElement)
+                NSApp.activate(ignoringOtherApps: true)
+                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                popover.contentViewController?.view.window?.makeKey()
+                print("[TouchLyric] Popover shown")
+            }
+        }
 
     func applicationWillTerminate(_ notification: Notification) {
         spotifyService.stopAllTimers()

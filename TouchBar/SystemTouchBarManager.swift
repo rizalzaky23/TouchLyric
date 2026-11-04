@@ -1,7 +1,6 @@
 import Cocoa
 import SwiftUI
 import Combine
-import Darwin
 
 final class SystemTouchBarManager: NSObject, ObservableObject {
     var objectWillChange = ObservableObjectPublisher()
@@ -9,22 +8,39 @@ final class SystemTouchBarManager: NSObject, ObservableObject {
     @Published var isPresented = false
     private weak var spotifyService: SpotifyBridgeService?
     private var cancellables = Set<AnyCancellable>()
-
+    private let controlStripID = NSTouchBarItem.Identifier("com.rizal.TouchLyric.controlStrip")
+    private var controlStripItem: NSCustomTouchBarItem?
 
     func inject(spotifyService: SpotifyBridgeService) {
         self.spotifyService = spotifyService
         buildTouchBar()
+
+        // Auto-present touchbar when playing
+        spotifyService.state.$playbackState
+            .combineLatest(spotifyService.state.$isTouchBarEnabled)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] pstate, enabled in
+                guard let self = self else { return }
+                if enabled && pstate == .playing && !self.isPresented {
+                    self.presentSystemTouchBar()
+                }
+            }
+            .store(in: &cancellables)
     }
 
-    private func dfrSymbol(_ name: String) -> UnsafeMutableRawPointer? {
-        let handle = dlopen("/System/Library/PrivateFrameworks/DFRFoundation.framework/DFRFoundation", RTLD_NOW)
-        guard handle != nil else { return nil }
-        return dlsym(handle, name)
-    }
     func addControlStripButton() {
-        guard let fnPtr = dfrSymbol("DFRElementSetControlStripPresenceForIdentifier") else { return }
-        let fn = unsafeBitCast(fnPtr, to: (@convention(c) (NSString, Bool) -> Void).self)
-        fn("com.rizal.TouchLyric.toggle" as NSString, true)
+        let item = NSCustomTouchBarItem(identifier: controlStripID)
+        let btn = NSButton(image: NSImage(systemSymbolName: "music.note", accessibilityDescription: "TouchLyric") ?? NSImage(), target: self, action: #selector(toggleSystemTouchBar))
+        item.view = btn
+        self.controlStripItem = item
+
+        let addTraySel = NSSelectorFromString("addSystemTrayItem:")
+        if NSTouchBarItem.responds(to: addTraySel) {
+            NSTouchBarItem.perform(addTraySel, with: item)
+        }
+
+        DFR_SetControlStripPresence(controlStripID.rawValue, true)
+        DFR_SetShowsCloseBox(true)
     }
 
     @objc func toggleSystemTouchBar() {
@@ -32,18 +48,23 @@ final class SystemTouchBarManager: NSObject, ObservableObject {
     }
 
     func presentSystemTouchBar() {
-        guard let tb = touchBar,
-              let fnPtr = dfrSymbol("NSTouchBarPresentSystemModalTouchBar") else { return }
-        let fn = unsafeBitCast(fnPtr, to: (@convention(c) (NSTouchBar) -> Void).self)
-        fn(tb)
-        isPresented = true
+        guard let tb = touchBar else { return }
+        let presentSel = NSSelectorFromString("presentSystemModalTouchBar:systemTrayItemIdentifier:")
+        if NSTouchBar.responds(to: presentSel) {
+            NSTouchBar.perform(presentSel, with: tb, with: controlStripID.rawValue)
+            isPresented = true
+            print("[TouchLyric] System modal Touch Bar presented")
+        }
     }
 
     func dismissSystemTouchBar() {
-        guard let fnPtr = dfrSymbol("NSTouchBarDismissSystemModalTouchBar") else { return }
-        let fn = unsafeBitCast(fnPtr, to: (@convention(c) () -> Void).self)
-        fn()
-        isPresented = false
+        guard let tb = touchBar else { return }
+        let dismissSel = NSSelectorFromString("dismissSystemModalTouchBar:")
+        if NSTouchBar.responds(to: dismissSel) {
+            NSTouchBar.perform(dismissSel, with: tb)
+            isPresented = false
+            print("[TouchLyric] System modal Touch Bar dismissed")
+        }
     }
 
     // MARK: - Build Touch Bar UI
@@ -60,28 +81,40 @@ extension SystemTouchBarManager: NSTouchBarDelegate {
         guard identifier.rawValue == "TouchLyric.activeLine",
               let svc = spotifyService else { return nil }
         let item = NSCustomTouchBarItem(identifier: identifier)
-        let label = NSTextField(labelWithString: "")
-        label.font = NSFont.systemFont(ofSize: 13, weight: .medium)
-        label.alignment = .center
-        // Show initial lyric if available
-        label.stringValue = svc.state.lyrics.first?.text ?? ""
-        // Update when either the current index or the lyrics array changes
-        svc.state.$currentLineIndex
-            .combineLatest(svc.state.$lyrics)
-            .receive(on: DispatchQueue.main)
-            .sink { idx, lines in
-                let txt = lines.indices.contains(idx) ? lines[idx].text : lines.first?.text ?? ""
-                label.stringValue = txt
-            }
-            .store(in: &cancellables)
-        item.view = label
+        item.view = NSHostingView(rootView: TouchBarLyricView(spotifyService: svc))
         return item
     }
 }
 
-// Helper safely index arrays
-extension Collection {
-    subscript(safe index: Index) -> Element? {
-        indices.contains(index) ? self[index] : nil
+// MARK: - Touch Bar SwiftUI View
+struct TouchBarLyricView: View {
+    @ObservedObject var spotifyService: SpotifyBridgeService
+
+    private var currentText: String {
+        let state = spotifyService.state
+        if let track = state.track {
+            if !state.lyrics.isEmpty && state.lyrics.indices.contains(state.currentLineIndex) {
+                let line = state.lyrics[state.currentLineIndex].text
+                return line.isEmpty ? "🎵 \(track.title)" : line
+            } else if state.playbackState == .playing {
+                return "🎵 \(track.title) - \(track.artist)"
+            } else {
+                return "⏸ \(track.title) - \(track.artist)"
+            }
+        }
+        return "TouchLyric: Buka Spotify untuk memutar lagu"
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "music.note")
+                .foregroundColor(.green)
+            Text(currentText)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 }

@@ -41,18 +41,46 @@ final class LRCParserAndCacheService {
     }
 
     private func fetchFromLRCLib(track: SpotifyTrack) async throws -> [LyricLine] {
+        if let lines = try? await fetchExact(track: track), !lines.isEmpty {
+            return lines
+        }
+        return try await fetchSearch(track: track)
+    }
+
+    private func fetchExact(track: SpotifyTrack) async throws -> [LyricLine] {
         var comps = URLComponents(string: "https://lrclib.net/api/get")!
         comps.queryItems = [
             URLQueryItem(name: "track_name", value: track.title),
             URLQueryItem(name: "artist_name", value: track.artist),
             URLQueryItem(name: "duration", value: String(Int(track.duration)))
         ]
-        let (data, _) = try await URLSession.shared.data(from: comps.url!)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-        guard let lrc = json["syncedLyrics"] as? String else {
-            throw NSError(domain: "LRC", code: 1, userInfo: [NSLocalizedDescriptionKey: "No lyrics"])
+        guard let url = comps.url else { throw NSError(domain: "LRC", code: 1) }
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if let httpRes = response as? HTTPURLResponse, httpRes.statusCode == 200,
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let lrc = json["syncedLyrics"] as? String, !lrc.isEmpty {
+            return parseLRC(lrc)
         }
-        return parseLRC(lrc)
+        throw NSError(domain: "LRC", code: 1, userInfo: [NSLocalizedDescriptionKey: "No exact lyrics"])
+    }
+
+    private func fetchSearch(track: SpotifyTrack) async throws -> [LyricLine] {
+        var comps = URLComponents(string: "https://lrclib.net/api/search")!
+        comps.queryItems = [
+            URLQueryItem(name: "track_name", value: track.title),
+            URLQueryItem(name: "artist_name", value: track.artist)
+        ]
+        guard let url = comps.url else { throw NSError(domain: "LRC", code: 1) }
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if let httpRes = response as? HTTPURLResponse, httpRes.statusCode == 200,
+           let items = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
+            for item in items {
+                if let lrc = item["syncedLyrics"] as? String, !lrc.isEmpty {
+                    return parseLRC(lrc)
+                }
+            }
+        }
+        throw NSError(domain: "LRC", code: 1, userInfo: [NSLocalizedDescriptionKey: "No lyrics found"])
     }
 
     private func parseLRC(_ raw: String) -> [LyricLine] {

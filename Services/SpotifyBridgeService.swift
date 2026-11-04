@@ -27,16 +27,34 @@ final class SpotifyBridgeService: ObservableObject {
         notificationObserver = DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("com.spotify.client.PlaybackStateChanged"),
             object: nil,
-            queue: .main) { [weak self] _ in
-                self?.handlePlaybackStateChange()
+            queue: .main) { [weak self] notif in
+                self?.handlePlaybackNotification(notif)
             }
     }
 
-    private func handlePlaybackStateChange() {
+    private func handlePlaybackNotification(_ notification: Notification) {
+        if let info = notification.userInfo,
+           let stateStr = info["Player State"] as? String {
+            let pstate = PlaybackState(rawValue: stateStr.capitalized) ?? .unknown
+            var track: SpotifyTrack? = nil
+            if pstate != .stopped,
+               let trackId = info["Track ID"] as? String {
+                let title = info["Name"] as? String ?? ""
+                let artist = info["Artist"] as? String ?? ""
+                let durMs = (info["Duration"] as? NSNumber)?.doubleValue ?? 0
+                track = SpotifyTrack(id: trackId, title: title, artist: artist, duration: durMs / 1000)
+            }
+            updatePlayback(state: pstate, track: track)
+            return
+        }
         fetchCurrentTrackIfNeeded()
     }
 
-    // MARK: - AppleScript helpers
+    // MARK: - AppleScript & Process helpers
+
+    private var isSpotifyRunning: Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client").isEmpty
+    }
 
     private func runAppleScript(_ src: String) -> String? {
         var err: NSDictionary?
@@ -47,8 +65,7 @@ final class SpotifyBridgeService: ObservableObject {
     }
 
     private func fetchCurrentTrackIfNeeded() {
-        guard let isRunning = runAppleScript("tell application \"System Events\" to (count of (processes where name is \"Spotify\")) > 0"),
-              isRunning == "true" else {
+        guard isSpotifyRunning else {
             updatePlayback(state: .stopped, track: nil)
             return
         }
@@ -56,7 +73,7 @@ final class SpotifyBridgeService: ObservableObject {
         let pstate = PlaybackState(rawValue: raw.capitalized) ?? .unknown
         var track: SpotifyTrack? = nil
         if pstate != .stopped {
-            let uri = runAppleScript("tell application \"Spotify\" to current track's uri") ?? ""
+            let uri = runAppleScript("tell application \"Spotify\" to id of current track") ?? ""
             let title = runAppleScript("tell application \"Spotify\" to name of current track") ?? ""
             let artist = runAppleScript("tell application \"Spotify\" to artist of current track") ?? ""
             let durStr = runAppleScript("tell application \"Spotify\" to duration of current track") ?? "0"
@@ -118,6 +135,7 @@ final class SpotifyBridgeService: ObservableObject {
     }
 
     private func calculateNextInterval() -> TimeInterval {
+        guard isSpotifyRunning else { return 0 }
         guard let posStr = runAppleScript("tell application \"Spotify\" to player position"),
               let cur = Double(posStr) else { return 0 }
         // find next lyric after current position
@@ -138,12 +156,14 @@ final class SpotifyBridgeService: ObservableObject {
     // MARK: - Public controls
 
     func seek(to line: LyricLine) {
+        guard isSpotifyRunning else { return }
         let script = "tell application \"Spotify\" to set player position to \(line.time)"
         _ = runAppleScript(script)
         scheduleSmartTimer()
     }
 
     func offsetCurrentPosition(by delta: TimeInterval) {
+        guard isSpotifyRunning else { return }
         guard let posStr = runAppleScript("tell application \"Spotify\" to player position"),
               let cur = Double(posStr) else { return }
         let newPos = max(0, cur + delta)
