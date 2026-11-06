@@ -85,7 +85,10 @@ struct PopoverContentView: View {
                 Image(systemName: "rectangle.and.pencil.and.outline")
             }
             .toggleStyle(.button)
-            Button(action: { /* open settings */ }) {
+            Button(action: {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                NSApp.activate(ignoringOtherApps: true)
+            }) {
                 Image(systemName: "gearshape")
             }
             Button(action: { NSApplication.shared.terminate(nil) }) {

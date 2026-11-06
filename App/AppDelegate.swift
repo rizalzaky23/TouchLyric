@@ -1,11 +1,12 @@
 import Cocoa
 import SwiftUI
+import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var touchBarManager: SystemTouchBarManager!
-    private var spotifyService: SpotifyBridgeService!
+    var spotifyService: SpotifyBridgeService!
     private var cacheService: LRCParserAndCacheService!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -14,14 +15,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         touchBarManager = SystemTouchBarManager()
         touchBarManager.inject(spotifyService: spotifyService)
 
-        NSApp.setActivationPolicy(.regular)
+        // Run as a background accessory app without cluttering the macOS Dock
+        NSApp.setActivationPolicy(.accessory)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "music.note.list", accessibilityDescription: "TouchLyric")
             button.target = self
             button.action = #selector(togglePopover(_:))
         }
-
 
         // Popover
         let vc = NSHostingController(rootView: PopoverContentView()
@@ -32,13 +33,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 320, height: 420)
 
-        // Control‑strip button via private API
+        // Control-strip button on Touch Bar
         touchBarManager.addControlStripButton()
 
-        // Auto-present Touch Bar on launch
-        if spotifyService.state.isTouchBarEnabled {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                self?.touchBarManager.presentSystemTouchBar()
+        // Enable Launch at Login so TouchLyric is always running silently in background
+        if #available(macOS 13.0, *) {
+            let service = SMAppService.mainApp
+            if service.status == .notRegistered {
+                try? service.register()
             }
         }
     }

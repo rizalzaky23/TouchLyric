@@ -3,7 +3,8 @@
     "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- LSUIElement removed to allow UI elements -->
+	<key>LSUIElement</key>
+	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>This app controls Spotify to sync lyrics with the playback position.</string>
 	<key>NSAppTransportSecurity</key>

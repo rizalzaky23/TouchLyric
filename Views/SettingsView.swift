@@ -1,19 +1,41 @@
 import SwiftUI
 import Combine
+import ServiceManagement
 
 struct SettingsView: View {
     @EnvironmentObject var spotify: SpotifyBridgeService
+    @State private var launchAtLogin: Bool = {
+        if #available(macOS 13.0, *) {
+            return SMAppService.mainApp.status == .enabled
+        }
+        return false
+    }()
 
     var body: some View {
         Form {
             Toggle("Show Lyrics on Touch Bar", isOn: $spotify.state.isTouchBarEnabled)
+
+            if #available(macOS 13.0, *) {
+                Toggle("Launch at Login (Background)", isOn: Binding(
+                    get: { launchAtLogin },
+                    set: { newValue in
+                        launchAtLogin = newValue
+                        if newValue {
+                            try? SMAppService.mainApp.register()
+                        } else {
+                            try? SMAppService.mainApp.unregister()
+                        }
+                    }
+                ))
+            }
+
             HStack {
                 Text("Cache size")
                 Spacer()
                 Text(CacheSizeFormatter.shared.formattedSize())
             }
         }
-        .frame(width: 300, height: 150)
+        .frame(width: 320, height: 160)
         .padding()
     }
 }

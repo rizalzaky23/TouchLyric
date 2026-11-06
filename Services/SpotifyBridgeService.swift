@@ -25,15 +25,50 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
             .store(in: &cancellables)
 
         subscribeToSpotifyNotifications()
+        subscribeToWorkspaceNotifications()
         fetchCurrentTrackIfNeeded()
     }
 
     deinit {
         DistributedNotificationCenter.default().removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         stopSyncTimer()
     }
 
-    // MARK: - DistributedNotificationCenter observer
+    // MARK: - DistributedNotificationCenter & NSWorkspace observers
+
+    private func subscribeToWorkspaceNotifications() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleWorkspaceAppDidLaunch(_:)),
+            name: NSWorkspace.didLaunchApplicationNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleWorkspaceAppDidTerminate(_:)),
+            name: NSWorkspace.didTerminateApplicationNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleWorkspaceAppDidLaunch(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              app.bundleIdentifier == "com.spotify.client" else { return }
+        print("[TouchLyric] Spotify launched! Auto-connecting...")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            self?.fetchCurrentTrackIfNeeded()
+        }
+    }
+
+    @objc private func handleWorkspaceAppDidTerminate(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              app.bundleIdentifier == "com.spotify.client" else { return }
+        print("[TouchLyric] Spotify quit! Deactivating...")
+        DispatchQueue.main.async { [weak self] in
+            self?.updatePlayback(state: .stopped, track: nil)
+        }
+    }
 
     private func subscribeToSpotifyNotifications() {
         DistributedNotificationCenter.default().addObserver(

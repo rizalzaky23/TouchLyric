@@ -15,14 +15,20 @@ final class SystemTouchBarManager: NSObject, ObservableObject {
         self.spotifyService = spotifyService
         buildTouchBar()
 
-        // Auto-present touchbar when playing
+        // Auto-present touchbar when Spotify is playing, auto-dismiss when stopped
         spotifyService.state.$playbackState
             .combineLatest(spotifyService.state.$isTouchBarEnabled)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pstate, enabled in
                 guard let self = self else { return }
-                if enabled && pstate == .playing && !self.isPresented {
-                    self.presentSystemTouchBar()
+                if enabled && pstate == .playing {
+                    if !self.isPresented {
+                        self.presentSystemTouchBar()
+                    }
+                } else if pstate == .stopped || !enabled {
+                    if self.isPresented {
+                        self.dismissSystemTouchBar()
+                    }
                 }
             }
             .store(in: &cancellables)
