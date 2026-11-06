@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Combine
+import SwiftUI
 
 final class SpotifyBridgeService: NSObject, ObservableObject {
     @Published var state = TouchLyricState()
@@ -58,8 +59,7 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
             }
 
             let pos = (info["Playback Position"] as? NSNumber)?.doubleValue ?? 0
-            self.lastKnownPosition = pos
-            self.lastPositionTimestamp = Date()
+            self.recordPosition(pos)
 
             updatePlayback(state: pstate, track: track)
             return
@@ -99,11 +99,18 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
 
             if let posStr = runAppleScript("tell application \"Spotify\" to player position"),
                let pos = Double(posStr.replacingOccurrences(of: ",", with: ".")) {
-                self.lastKnownPosition = pos
-                self.lastPositionTimestamp = Date()
+                self.recordPosition(pos)
             }
         }
         updatePlayback(state: pstate, track: track)
+    }
+
+    private func recordPosition(_ pos: TimeInterval) {
+        self.lastKnownPosition = pos
+        let now = Date()
+        self.lastPositionTimestamp = now
+        self.state.lastKnownPosition = pos
+        self.state.lastPositionTimestamp = now
     }
 
     private func updatePlayback(state pstate: PlaybackState, track: SpotifyTrack?) {
@@ -113,7 +120,7 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
                 print("[TouchLyric] New track detected: \(t.title) by \(t.artist)")
                 self.state.track = t
                 self.state.lyrics = []
-                self.state.currentLineIndex = 0
+                self.state.currentLineIndex = -1
                 Task { await loadLyrics(for: t) }
             }
         } else {
@@ -158,7 +165,7 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
         guard state.playbackState == .playing else { return }
 
         let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now(), repeating: .milliseconds(250))
+        timer.schedule(deadline: .now(), repeating: .milliseconds(100))
         timer.setEventHandler { [weak self] in
             self?.tickSync()
         }
@@ -174,9 +181,9 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
     private func tickSync() {
         guard state.playbackState == .playing, isSpotifyRunning else { return }
 
-        // Every ~2 seconds (8 ticks @ 250ms), resync exact position & check track with Spotify
+        // Every ~2 seconds (20 ticks @ 100ms), resync exact position & check track with Spotify
         pollCounter += 1
-        if pollCounter >= 8 {
+        if pollCounter >= 20 {
             pollCounter = 0
             resyncWithSpotify()
         }
@@ -190,11 +197,24 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
         // Find active lyric line for current position
         if let idx = state.lyrics.lastIndex(where: { $0.time <= currentPos }) {
             if state.currentLineIndex != idx {
-                state.currentLineIndex = idx
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    state.currentLineIndex = idx
+                }
             }
         } else {
-            if state.currentLineIndex != 0 {
-                state.currentLineIndex = 0
+            let firstTime = state.lyrics.first?.time ?? 0
+            if firstTime - currentPos <= 3.5 {
+                if state.currentLineIndex != 0 {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        state.currentLineIndex = 0
+                    }
+                }
+            } else {
+                if state.currentLineIndex != -1 {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        state.currentLineIndex = -1
+                    }
+                }
             }
         }
     }
@@ -203,8 +223,7 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
         guard isSpotifyRunning else { return }
         if let posStr = runAppleScript("tell application \"Spotify\" to player position"),
            let cur = Double(posStr.replacingOccurrences(of: ",", with: ".")) {
-            lastKnownPosition = cur
-            lastPositionTimestamp = Date()
+            recordPosition(cur)
         }
 
         // Check if track changed (safety net if notification was delayed)
@@ -222,10 +241,11 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
         guard isSpotifyRunning else { return }
         let script = "tell application \"Spotify\" to set player position to \(line.time)"
         _ = runAppleScript(script)
-        lastKnownPosition = line.time
-        lastPositionTimestamp = Date()
+        recordPosition(line.time)
         if let idx = state.lyrics.firstIndex(where: { $0.id == line.id }) {
-            state.currentLineIndex = idx
+            withAnimation(.easeInOut(duration: 0.25)) {
+                state.currentLineIndex = idx
+            }
         }
     }
 
@@ -235,8 +255,7 @@ final class SpotifyBridgeService: NSObject, ObservableObject {
               let cur = Double(posStr.replacingOccurrences(of: ",", with: ".")) else { return }
         let newPos = max(0, cur + delta)
         _ = runAppleScript("tell application \"Spotify\" to set player position to \(newPos)")
-        lastKnownPosition = newPos
-        lastPositionTimestamp = Date()
+        recordPosition(newPos)
         tickSync()
     }
 
