@@ -142,12 +142,61 @@ struct TouchBarLyricView: View {
     }
 }
 
-// MARK: - Lyric Color Follow View (Teks putih berubah hijau saat dinyanyikan)
+// MARK: - Word-by-Word Lyric Timing Model
+private struct WordTiming {
+    let word: String
+    let startTime: TimeInterval
+    let endTime: TimeInterval
+}
+
+// MARK: - Lyric Color Follow View (Teks menyala hijau per kata mengikuti vokal)
 private struct LyricColorFollowView: View {
     @ObservedObject var state: TouchLyricState
     let line: LyricLine
     let text: String
     let lineIndex: Int
+
+    private var wordTimings: [WordTiming] {
+        let startTime = line.time
+        let endTime = state.nextLineTime
+        let rawDuration = max(0.5, endTime - startTime)
+
+        // Estimasi durasi vokal jika ada jeda melodi/solo panjang
+        let singingDuration: Double = {
+            if rawDuration <= 7.0 {
+                return rawDuration
+            }
+            let charBased = Double(max(10, text.count)) * 0.18
+            return min(rawDuration, max(3.0, min(charBased, 6.5)))
+        }()
+
+        let rawWords = text.components(separatedBy: " ").filter { !$0.isEmpty }
+        guard !rawWords.isEmpty else { return [] }
+
+        // Bobot tiap kata dihitung berdasarkan suku kata (vokal) dan panjang kata
+        // agar kata pendek ("dan", "kau") dan kata panjang ("mempertahankan") pas dengan ucapan penyanyi
+        let weights = rawWords.map { word -> Double in
+            let lower = word.lowercased()
+            let vowels = lower.filter { "aiueoy".contains($0) }.count
+            let charBonus = Double(max(1, word.count)) * 0.1
+            return max(1.0, Double(vowels) + charBonus)
+        }
+        let totalWeight = weights.reduce(0, +)
+        guard totalWeight > 0 else { return [] }
+
+        var result: [WordTiming] = []
+        var currentAccWeight: Double = 0
+
+        for (index, word) in rawWords.enumerated() {
+            let w = weights[index]
+            let wordStart = startTime + singingDuration * (currentAccWeight / totalWeight)
+            currentAccWeight += w
+            let wordEnd = startTime + singingDuration * (currentAccWeight / totalWeight)
+            result.append(WordTiming(word: word, startTime: wordStart, endTime: wordEnd))
+        }
+
+        return result
+    }
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: state.playbackState != .playing)) { context in
@@ -155,51 +204,47 @@ private struct LyricColorFollowView: View {
             let elapsed = state.playbackState == .playing ? now.timeIntervalSince(state.lastPositionTimestamp) : 0
             let currentPos = state.lastKnownPosition + elapsed
 
-            let startTime = line.time
-            let endTime = state.nextLineTime
-            let rawDuration = max(0.5, endTime - startTime)
+            let timings = wordTimings
 
-            // Estimasi durasi vokal agar saat jeda melodi/solo tidak terseret lambat
-            let singingDuration: Double = {
-                if rawDuration <= 7.0 {
-                    return rawDuration
-                }
-                let charBased = Double(max(10, text.count)) * 0.18
-                return min(rawDuration, max(3.0, min(charBased, 6.5)))
-            }()
-
-            let rawProgress = (currentPos - startTime) / singingDuration
-            let progress = min(max(rawProgress, 0.0), 1.0)
-
-            ZStack(alignment: .leading) {
-                // Teks dasar putih (persis seperti tampilan sebelumnya)
-                Text(text)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-
-                // Warna hijau aktif saat lirik dinyanyikan (mengikuti kata demi kata)
-                Text(text)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(red: 0.11, green: 0.84, blue: 0.38)) // Spotify Green
-                    .lineLimit(1)
-                    .mask(
-                        GeometryReader { geo in
-                            HStack(spacing: 0) {
-                                Rectangle()
-                                    .frame(width: max(0, min(geo.size.width, geo.size.width * CGFloat(progress))))
-                                Spacer(minLength: 0)
-                            }
-                        }
+            Text(buildAttributedLyric(timings: timings, currentPos: currentPos))
+                .font(.system(size: 14, weight: .semibold))
+                .lineLimit(1)
+                .id(lineIndex)
+                .transition(
+                    .asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: 3)),
+                        removal: .opacity.combined(with: .offset(y: -3))
                     )
-            }
-            .id(lineIndex)
-            .transition(
-                .asymmetric(
-                    insertion: .opacity.combined(with: .offset(y: 3)),
-                    removal: .opacity.combined(with: .offset(y: -3))
                 )
-            )
         }
+    }
+
+    private func buildAttributedLyric(timings: [WordTiming], currentPos: TimeInterval) -> AttributedString {
+        guard !timings.isEmpty else {
+            var plain = AttributedString(text)
+            plain.foregroundColor = Color.white
+            return plain
+        }
+
+        var result = AttributedString()
+        let greenColor = Color(red: 0.11, green: 0.84, blue: 0.38) // Spotify Green
+        let whiteColor = Color.white
+
+        for (index, item) in timings.enumerated() {
+            var wordAttr = AttributedString(item.word)
+            let isSung = currentPos >= item.startTime
+            wordAttr.foregroundColor = isSung ? greenColor : whiteColor
+
+            result.append(wordAttr)
+
+            if index < timings.count - 1 {
+                var spaceAttr = AttributedString(" ")
+                let nextIsSung = currentPos >= timings[index + 1].startTime
+                spaceAttr.foregroundColor = nextIsSung ? greenColor : whiteColor
+                result.append(spaceAttr)
+            }
+        }
+
+        return result
     }
 }
