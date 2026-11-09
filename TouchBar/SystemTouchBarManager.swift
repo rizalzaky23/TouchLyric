@@ -111,7 +111,7 @@ struct TouchBarLyricView: View {
     }
 
     private var isSyncedLyricActive: Bool {
-        state.playbackState == .playing &&
+        (state.playbackState == .playing || state.playbackState == .paused) &&
         !state.lyrics.isEmpty &&
         state.currentLineIndex >= 0 &&
         state.lyrics.indices.contains(state.currentLineIndex)
@@ -120,7 +120,7 @@ struct TouchBarLyricView: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "music.note")
-                .foregroundColor(state.playbackState == .playing ? Color(red: 0.11, green: 0.84, blue: 0.38) : .secondary)
+                .foregroundColor(state.playbackState != .stopped ? Color(red: 0.11, green: 0.84, blue: 0.38) : .secondary)
 
             if isSyncedLyricActive {
                 let line = state.lyrics[state.currentLineIndex]
