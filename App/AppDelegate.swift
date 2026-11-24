@@ -62,6 +62,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showSettingsWindow()
+        return true
+    }
+
     func showSettingsWindow() {
         popover.performClose(nil)
         if settingsWindow == nil {
@@ -82,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
+        settingsWindow?.orderFrontRegardless()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
