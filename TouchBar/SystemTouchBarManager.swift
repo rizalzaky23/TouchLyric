@@ -7,12 +7,14 @@ final class SystemTouchBarManager: NSObject, ObservableObject {
     private var touchBar: NSTouchBar?
     @Published var isPresented = false
     private weak var spotifyService: SpotifyBridgeService?
+    private var appearance: TouchLyricAppearance?
     private var cancellables = Set<AnyCancellable>()
     private let controlStripID = NSTouchBarItem.Identifier("com.rizal.TouchLyric.controlStrip")
     private var controlStripItem: NSCustomTouchBarItem?
 
-    func inject(spotifyService: SpotifyBridgeService) {
+    func inject(spotifyService: SpotifyBridgeService, appearance: TouchLyricAppearance) {
         self.spotifyService = spotifyService
+        self.appearance = appearance
         buildTouchBar()
 
         // Auto-present touchbar when Spotify is playing, auto-dismiss when stopped
@@ -85,9 +87,10 @@ final class SystemTouchBarManager: NSObject, ObservableObject {
 extension SystemTouchBarManager: NSTouchBarDelegate {
     func touchBar(_ touchBar: NSTouchBar, makeItemForIdentifier identifier: NSTouchBarItem.Identifier) -> NSTouchBarItem? {
         guard identifier.rawValue == "TouchLyric.activeLine",
-              let svc = spotifyService else { return nil }
+              let svc = spotifyService,
+              let appearance = appearance else { return nil }
         let item = NSCustomTouchBarItem(identifier: identifier)
-        item.view = NSHostingView(rootView: TouchBarLyricView(state: svc.state))
+        item.view = NSHostingView(rootView: TouchBarLyricView(state: svc.state, appearance: appearance))
         return item
     }
 }
@@ -95,6 +98,7 @@ extension SystemTouchBarManager: NSTouchBarDelegate {
 // MARK: - Touch Bar SwiftUI View
 struct TouchBarLyricView: View {
     @ObservedObject var state: TouchLyricState
+    @ObservedObject var appearance: TouchLyricAppearance
 
     private var currentText: String {
         if let track = state.track {
@@ -119,21 +123,24 @@ struct TouchBarLyricView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "music.note")
-                .foregroundColor(state.playbackState != .stopped ? Color(red: 0.11, green: 0.84, blue: 0.38) : .secondary)
+            if appearance.showMusicIcon {
+                Image(systemName: "music.note")
+                    .foregroundColor(state.playbackState != .stopped ? appearance.activeColor : .secondary)
+            }
 
             if isSyncedLyricActive {
                 let line = state.lyrics[state.currentLineIndex]
                 LyricColorFollowView(
                     state: state,
+                    appearance: appearance,
                     line: line,
                     text: currentText,
                     lineIndex: state.currentLineIndex
                 )
             } else {
                 Text(currentText)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(appearance.lyricFont)
+                    .foregroundColor(appearance.baseColor)
                     .lineLimit(1)
             }
         }
@@ -149,9 +156,10 @@ private struct WordTiming {
     let endTime: TimeInterval
 }
 
-// MARK: - Lyric Color Follow View (Teks menyala hijau per kata mengikuti vokal)
+// MARK: - Lyric Color Follow View (Teks menyala per kata mengikuti vokal)
 private struct LyricColorFollowView: View {
     @ObservedObject var state: TouchLyricState
+    @ObservedObject var appearance: TouchLyricAppearance
     let line: LyricLine
     let text: String
     let lineIndex: Int
@@ -207,7 +215,7 @@ private struct LyricColorFollowView: View {
             let timings = wordTimings
 
             Text(buildAttributedLyric(timings: timings, currentPos: currentPos))
-                .font(.system(size: 14, weight: .semibold))
+                .font(appearance.lyricFont)
                 .lineLimit(1)
                 .id(lineIndex)
                 .transition(
@@ -220,27 +228,28 @@ private struct LyricColorFollowView: View {
     }
 
     private func buildAttributedLyric(timings: [WordTiming], currentPos: TimeInterval) -> AttributedString {
+        let activeColor = appearance.activeColor
+        let baseColor = appearance.baseColor
+
         guard !timings.isEmpty else {
             var plain = AttributedString(text)
-            plain.foregroundColor = Color.white
+            plain.foregroundColor = baseColor
             return plain
         }
 
         var result = AttributedString()
-        let greenColor = Color(red: 0.11, green: 0.84, blue: 0.38) // Spotify Green
-        let whiteColor = Color.white
 
         for (index, item) in timings.enumerated() {
             var wordAttr = AttributedString(item.word)
             let isSung = currentPos >= item.startTime
-            wordAttr.foregroundColor = isSung ? greenColor : whiteColor
+            wordAttr.foregroundColor = isSung ? activeColor : baseColor
 
             result.append(wordAttr)
 
             if index < timings.count - 1 {
                 var spaceAttr = AttributedString(" ")
                 let nextIsSung = currentPos >= timings[index + 1].startTime
-                spaceAttr.foregroundColor = nextIsSung ? greenColor : whiteColor
+                spaceAttr.foregroundColor = nextIsSung ? activeColor : baseColor
                 result.append(spaceAttr)
             }
         }

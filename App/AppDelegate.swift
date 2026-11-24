@@ -7,13 +7,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover!
     private var touchBarManager: SystemTouchBarManager!
     var spotifyService: SpotifyBridgeService!
+    let appearance = TouchLyricAppearance()
     private var cacheService: LRCParserAndCacheService!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         cacheService = LRCParserAndCacheService()
         spotifyService = SpotifyBridgeService(cacheService: cacheService)
         touchBarManager = SystemTouchBarManager()
-        touchBarManager.inject(spotifyService: spotifyService)
+        touchBarManager.inject(spotifyService: spotifyService, appearance: appearance)
 
         // Run as a background accessory app without cluttering the macOS Dock
         NSApp.setActivationPolicy(.accessory)
