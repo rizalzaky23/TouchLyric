@@ -13,7 +13,11 @@ struct TouchLyricApp: App {
 
     var body: some Scene {
         Settings {
-            EmptyView()
+            if let svc = appDelegate.spotifyService {
+                SettingsView()
+                    .environmentObject(svc)
+                    .environmentObject(appDelegate.appearance)
+            }
         }
     }
 }

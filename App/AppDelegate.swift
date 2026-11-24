@@ -5,6 +5,7 @@ import ServiceManagement
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
+    private var settingsWindow: NSWindow?
     private var touchBarManager: SystemTouchBarManager!
     var spotifyService: SpotifyBridgeService!
     let appearance = TouchLyricAppearance()
@@ -26,9 +27,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Popover
-        let vc = NSHostingController(rootView: PopoverContentView()
+        let vc = NSHostingController(rootView: PopoverContentView(onOpenSettings: { [weak self] in
+            self?.showSettingsWindow()
+        })
                                             .environmentObject(spotifyService)
-                                            .environmentObject(touchBarManager))
+                                            .environmentObject(touchBarManager)
+                                            .environmentObject(appearance))
         popover = NSPopover()
         popover.contentViewController = vc
         popover.behavior = .transient
@@ -57,6 +61,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 print("[TouchLyric] Popover shown")
             }
         }
+
+    func showSettingsWindow() {
+        popover.performClose(nil)
+        if settingsWindow == nil {
+            let rootView = SettingsView()
+                .environmentObject(spotifyService)
+                .environmentObject(appearance)
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 400, height: 470),
+                styleMask: [.titled, .closable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "TouchLyric Settings"
+            window.center()
+            window.isReleasedWhenClosed = false
+            window.contentViewController = NSHostingController(rootView: rootView)
+            settingsWindow = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        settingsWindow?.makeKeyAndOrderFront(nil)
+    }
 
     func applicationWillTerminate(_ notification: Notification) {
         spotifyService.stopAllTimers()

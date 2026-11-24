@@ -4,6 +4,8 @@ import AppKit
 struct PopoverContentView: View {
     @EnvironmentObject var spotify: SpotifyBridgeService
     @EnvironmentObject var touchBarMgr: SystemTouchBarManager
+    @EnvironmentObject var appearance: TouchLyricAppearance
+    var onOpenSettings: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,9 +54,10 @@ struct PopoverContentView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(spotify.state.lyrics) { line in
+                        let isCurrent = spotify.state.currentLine?.id == line.id
                         Text(line.text)
-                            .font(line.id == spotify.state.lyrics[spotify.state.currentLineIndex].id ? .system(size: 14, weight: .semibold) : .system(size: 13))
-                            .foregroundColor(line.id == spotify.state.lyrics[spotify.state.currentLineIndex].id ? .accentColor : .primary)
+                            .font(isCurrent ? .system(size: 14, weight: .semibold) : .system(size: 13))
+                            .foregroundColor(isCurrent ? appearance.activeColor : .primary)
                             .onTapGesture { spotify.seek(to: line) }
                             .id(line.id)
                     }
@@ -86,8 +89,12 @@ struct PopoverContentView: View {
             }
             .toggleStyle(.button)
             Button(action: {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                NSApp.activate(ignoringOtherApps: true)
+                if let onOpenSettings {
+                    onOpenSettings()
+                } else {
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    NSApp.activate(ignoringOtherApps: true)
+                }
             }) {
                 Image(systemName: "gearshape")
             }
